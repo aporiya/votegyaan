@@ -1,0 +1,67 @@
+.glossary-container {
+  padding: 1rem 0;
+}
+
+.search-bar-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 600px;
+  padding: 15px 25px;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 153, 51, 0.3) !important; /* Saffron hint */
+  outline: none;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.search-input:focus {
+  border-color: var(--saffron) !important;
+  box-shadow: 0 0 15px rgba(255, 153, 51, 0.2);
+}
+
+.terms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.term-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.term-title {
+  color: var(--saffron);
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+
+.term-full {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.term-def {
+  font-size: 1rem;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  padding: 40px;
+}

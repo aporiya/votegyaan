@@ -1,0 +1,108 @@
+.timeline-container {
+  padding: 1rem 0;
+}
+
+.gantt-chart {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gantt-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr 4fr;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.gantt-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr 4fr;
+  padding: 15px 20px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.2s;
+}
+
+.gantt-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.result-row {
+  background: rgba(19, 136, 8, 0.1);
+}
+.result-row:hover {
+  background: rgba(19, 136, 8, 0.15);
+}
+
+.badge-states {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-right: 10px;
+}
+
+.badge-seats {
+  background: rgba(255, 153, 51, 0.2);
+  color: var(--saffron);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.progress-track {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  position: relative;
+}
+
+.progress-fill {
+  position: absolute;
+  height: 100%;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255, 153, 51, 0.4);
+  cursor: pointer;
+}
+
+.progress-fill:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+  top: -30px;
+}
+
+.tooltip {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .gantt-header, .gantt-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .col-bar {
+    display: none;
+  }
+}
