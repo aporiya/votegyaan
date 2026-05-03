@@ -1,13 +1,23 @@
 # VoteGyaan 🇮🇳
 
-VoteGyaan is an intelligent, friendly, and non-partisan AI assistant that educates Indian citizens about the Indian election process. It features a full-stack React 19 + Node.js application powered by Google's Gemini AI.
+VoteGyaan is an intelligent, friendly, and non-partisan AI assistant that educates Indian citizens about the Indian election process. It features a full-stack React + Node.js application powered by Google's Gemini AI.
+
+## 🌐 Live Demo
+
+| Service | URL |
+|---|---|
+| **Frontend (App)** | https://votegyaan-frontend-938236899164.us-central1.run.app |
+| **Backend API** | https://votegyaan-backend-938236899164.us-central1.run.app |
+
+---
 
 ## Architecture
 
-- **Frontend**: React 19 + Vite + Vanilla CSS (Premium Glassmorphism Design)
+- **Frontend**: React + Vite + Vanilla CSS (Premium Glassmorphism Design)
 - **Backend**: Node.js + Express
 - **AI**: `@google/generative-ai` (Gemini API)
 - **Deployment**: GCP Cloud Run (Containerized Frontend and Backend)
+- **Container Registry**: Google Artifact Registry (`us-central1`)
 
 ## Modules
 
@@ -20,6 +30,10 @@ VoteGyaan is an intelligent, friendly, and non-partisan AI assistant that educat
 ---
 
 ## Local Development
+
+### Prerequisites
+- Node.js **v20+** (required by Vite 8)
+- A valid `GEMINI_API_KEY`
 
 ### 1. Start Backend
 
@@ -45,7 +59,7 @@ npm run dev
 
 ## GCP Deployment Guide
 
-This project is configured to be deployed as **two separate Cloud Run services** to your GCP project `votegyaan`.
+This project is deployed as **two separate Cloud Run services** under GCP project `votegyaan` (Project Number: `938236899164`).
 
 ### Prerequisites
 
@@ -62,36 +76,40 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudb
 
 ### 1. Deploy the Backend (Express + Gemini API)
 
-1. Make sure you are in the `backend` directory:
-```bash
-cd backend
-```
-2. Deploy directly to Cloud Run from source:
 ```bash
 gcloud run deploy votegyaan-backend \
-  --source . \
+  --source ./backend \
   --region us-central1 \
   --allow-unauthenticated \
   --set-env-vars GEMINI_API_KEY=your_gemini_api_key_here
 ```
 *(Replace `your_gemini_api_key_here` with your actual Gemini API key)*
 
-3. **Take note of the Backend Service URL** provided after deployment.
+Take note of the **Backend Service URL** provided after deployment.
 
-### 2. Deploy the Frontend (React 19 + Nginx)
+### 2. Deploy the Frontend (React + Nginx)
 
-1. Update the frontend API endpoint:
-   - In `frontend/src/components/ChatAssistant.jsx` and `frontend/src/components/Quiz.jsx`, replace `http://localhost:8080` with your new **Backend Service URL**.
-2. Navigate to the `frontend` directory:
-```bash
-cd ../frontend
-```
-3. Deploy to Cloud Run from source:
+1. Update the API endpoint in:
+   - `frontend/src/components/ChatAssistant.jsx`
+   - `frontend/src/components/Quiz.jsx`
+
+   Replace `http://localhost:8080` with your **Backend Service URL**.
+
+2. Deploy to Cloud Run from source:
 ```bash
 gcloud run deploy votegyaan-frontend \
-  --source . \
+  --source ./frontend \
   --region us-central1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --port 8080
 ```
 
+> **Note**: The `frontend/Dockerfile` uses `node:20-alpine` (required by Vite 8) and serves via Nginx on port `8080` (required by Cloud Run).
+
 **Congratulations!** 🎉 Your VoteGyaan app is now live on Google Cloud Run.
+
+---
+
+## Repository
+
+GitHub: https://github.com/aporiya/votegyaan

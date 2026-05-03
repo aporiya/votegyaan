@@ -11,7 +11,7 @@ export default function Quiz() {
 
   useEffect(() => {
     // Try fetching from backend, fallback to local data if fails
-    fetch('http://localhost:8080/api/quiz')
+    fetch('https://votegyaan-backend-938236899164.us-central1.run.app/api/quiz')
       .then(res => res.json())
       .then(data => {
         setQuestions(data.questions);
