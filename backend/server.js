@@ -119,6 +119,8 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
+    console.log(`[${new Date().toISOString()}] Chat request - Session: ${sessionId}, Message: ${message.substring(0, 50)}...`);
+
     // Check if the user hasn't set a real API key yet
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "dummy_key") {
       console.warn("Using dummy API key. Returning mocked response.");
@@ -129,8 +131,9 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    console.log(`[${new Date().toISOString()}] Initializing Gemini model...`);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-1.5-flash",
       systemInstruction: systemPrompt,
     });
 
@@ -142,8 +145,11 @@ app.post('/api/chat', async (req, res) => {
       history: chatHistories[sessionId],
     });
 
+    console.log(`[${new Date().toISOString()}] Sending message to Gemini...`);
     const result = await chat.sendMessage(message);
     const response = result.response.text();
+
+    console.log(`[${new Date().toISOString()}] Got response from Gemini: ${response.substring(0, 50)}...`);
 
     // Update history manually if needed, but startChat manages it per instance. 
     // We update our stored history for future requests
@@ -153,13 +159,33 @@ app.post('/api/chat', async (req, res) => {
     res.json({ response });
   } catch (error) {
     console.error("Error in chat API:", error);
-    // Handle quota exceeded (429) gracefully
-    if (error.status === 429) {
+    console.error("Error details:", JSON.stringify(error, null, 2));
+    
+    // Handle various error types
+    if (error.status === 429 || error.code === 429) {
       return res.status(200).json({
         response: "Mujhe lagta hai abhi bahut saare log ek saath pooch rahe hain! 😅 Gemini API ka free quota thoda busy hai. Thodi der baad dobara try karein. (The AI is currently rate-limited. Please try again in a few minutes.) 🙏"
       });
     }
-    res.status(500).json({ error: "Failed to process chat request" });
+    
+    if (error.status === 401 || error.code === 401) {
+      return res.status(500).json({ 
+        error: "API authentication failed. Please check GEMINI_API_KEY.",
+        details: error.message 
+      });
+    }
+    
+    if (error.status === 400 || error.code === 400) {
+      return res.status(500).json({ 
+        error: "Invalid request to Gemini API.",
+        details: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to process chat request",
+      details: error.message 
+    });
   }
 });
 
@@ -171,4 +197,6 @@ app.get('/api/quiz', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`GEMINI_API_KEY configured: ${!!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'dummy_key'}`);
 });

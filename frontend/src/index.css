@@ -10,7 +10,7 @@
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   
-  --font-main: 'Inter', system-ui, sans-serif;
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -29,11 +29,14 @@ body {
     radial-gradient(circle at 15% 50%, rgba(255, 153, 51, 0.15), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(19, 136, 8, 0.15), transparent 25%);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4 {
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 /* Glassmorphism utility */
@@ -44,7 +47,8 @@ h1, h2, h3, h4 {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
@@ -58,38 +62,52 @@ h1, h2, h3, h4 {
   background: linear-gradient(135deg, var(--saffron), #e68a2e);
   color: #fff;
   border: none;
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 12px 28px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 1rem;
+  box-shadow: 0 4px 15px rgba(255, 153, 51, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 153, 51, 0.4);
+  box-shadow: 0 6px 20px rgba(255, 153, 51, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-outline {
   background: transparent;
   color: var(--text-primary);
-  border: 1px solid var(--border-glass);
-  padding: 10px 24px;
-  border-radius: 8px;
+  border: 2px solid var(--border-glass);
+  padding: 12px 28px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
 }
 
 .btn-outline:hover {
   background: rgba(255, 255, 255, 0.1);
+  border-color: var(--saffron);
+  transform: translateY(-2px);
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 }
 
 .animate-fade-in {
@@ -98,17 +116,27 @@ h1, h2, h3, h4 {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--bg-dark);
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 5px;
+  transition: background 0.3s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) var(--bg-dark);
 }
 
 .app-container {
@@ -121,9 +149,10 @@ h1, h2, h3, h4 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 0;
+  padding: 1.5rem 2rem;
   margin-bottom: 3rem;
   border-bottom: 1px solid var(--border-glass);
+  border-radius: 16px;
 }
 
 .logo {
@@ -131,29 +160,35 @@ h1, h2, h3, h4 {
   font-weight: 800;
   background: linear-gradient(to right, var(--saffron), var(--white), var(--green));
   -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
   display: flex;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.02em;
 }
 
 .nav-links {
   display: flex;
-  gap: 20px;
+  gap: 8px;
 }
 
 .nav-item {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s;
-  padding: 8px 12px;
-  border-radius: 6px;
+  transition: all 0.3s ease;
+  padding: 10px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-item:hover, .nav-item.active {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
 .page-title {
@@ -162,5 +197,8 @@ h1, h2, h3, h4 {
   font-size: 2.5rem;
   background: linear-gradient(135deg, #fff, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
+  letter-spacing: -0.02em;
+  font-weight: 800;
 }
