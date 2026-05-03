@@ -129,9 +129,9 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: systemPrompt,
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-lite",
+      systemInstruction: systemPrompt,
     });
 
     if (!chatHistories[sessionId]) {
@@ -155,7 +155,7 @@ app.post('/api/chat', async (req, res) => {
     console.error("Error in chat API:", error);
     // Handle quota exceeded (429) gracefully
     if (error.status === 429) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         response: "Mujhe lagta hai abhi bahut saare log ek saath pooch rahe hain! 😅 Gemini API ka free quota thoda busy hai. Thodi der baad dobara try karein. (The AI is currently rate-limited. Please try again in a few minutes.) 🙏"
       });
     }
