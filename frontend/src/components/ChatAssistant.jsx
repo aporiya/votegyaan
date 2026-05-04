@@ -43,7 +43,8 @@ export default function ChatAssistant() {
 
     try {
       // In development, target localhost:8080. In production, this should be the relative or full API path.
-      const response = await fetch('https://votegyaan-backend-938236899164.us-central1.run.app/api/chat', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage, sessionId })

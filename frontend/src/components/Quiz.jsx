@@ -11,7 +11,8 @@ export default function Quiz() {
 
   useEffect(() => {
     // Try fetching from backend, fallback to local data if fails
-    fetch('https://votegyaan-backend-938236899164.us-central1.run.app/api/quiz')
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    fetch(`${API_URL}/api/quiz`)
       .then(res => res.json())
       .then(data => {
         setQuestions(data.questions);

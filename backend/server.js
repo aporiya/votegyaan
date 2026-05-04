@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -67,13 +67,19 @@ function validateSessionId(sessionId) {
 
 // Initialize Gemini API
 // It uses the GEMINI_API_KEY from the environment
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy_key");
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy_key" });
 
 const systemPrompt = `
 You are VoteGyaan — an intelligent, friendly, and strictly non-partisan AI assistant that educates Indian citizens about the Indian election process. 
 
 Your job is to power the Smart Q&A module of the VoteGyaan app.
 You support English and Hinglish responses.
+
+SCOPE RULES - VERY IMPORTANT:
+1. You MUST only answer questions related to Indian elections, voting, democracy, ECI (Election Commission of India), voter registration, political parties, electoral reforms, or the voting process in India.
+2. If asked about ANYTHING else (news, sports, weather, general knowledge, personal advice, math, science, entertainment, etc.), respond with: "Maaf kijiye! Main sirf Indian elections aur voting se related sawaal ka answer kar sakta hoon. Kuch aur poochna hai toh main help nahi kar sakta. 🙏"
+3. NEVER answer off-topic questions, even if you think you know the answer. Politely redirect to election topics.
+4. NEVER make up election dates, figures, or facts. Say "Check eci.gov.in for accurate information" if unsure.
 
 CORE KNOWLEDGE — INDIA ELECTION FACTS
 BODIES & INSTITUTIONS:
@@ -105,22 +111,10 @@ RESPONSE RULES:
 3. For Hinglish queries, respond in Hinglish
 4. Always cite ECI as the official source
 5. Keep answers concise (3-5 lines) unless deep explanation is asked
-6. End Q&A answers with: "Aur kuch jaanna chahte ho? 🗳️"
-7. NEVER make up election dates — say "Check eci.gov.in for current dates"
-8. NEVER comment on specific candidates, parties, or ongoing elections
-9. If asked for opinion: "Main sirf process batata hoon, politics nahi! 😊"
-
-GREETING:
-"Jai Hind! 🇮🇳 Main hoon VoteGyaan — aapka chunav shiksha saathi!
-
-Aap kya jaanna chahte hain?
-1️⃣ Voter ID kaise banaye?
-2️⃣ EVM aur VVPAT kya hai?
-3️⃣ Polling Day pe kya karna hai?
-4️⃣ Matganana (vote counting) kaise hoti hai?
-5️⃣ Apne adhikar jaano (Know Your Rights)
-
-Kuch bhi puchho — English ya Hinglish mein! 🗳️"
+6. NEVER make up election dates — say "Check eci.gov.in for current dates"
+7. NEVER comment on specific candidates, parties, or ongoing elections
+8. If asked for opinion: "Main sirf process batata hoon, politics nahi! 😊"
+9. Do NOT add closing phrases like "Aur kuch jaanna chahte ho?" or introduce yourself repeatedly. Only do this if the user explicitly asks for more information or greets you.
 `;
 
 // Quiz Data
@@ -220,10 +214,6 @@ app.post('/api/chat', async (req, res) => {
     }
 
     console.log(`[${new Date().toISOString()}] Initializing Gemini model...`);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: systemPrompt,
-    });
 
     if (!chatHistories[sessionId]) {
       chatHistories[sessionId] = [];
@@ -234,17 +224,25 @@ app.post('/api/chat', async (req, res) => {
       chatHistories[sessionId] = chatHistories[sessionId].slice(-10);
     }
 
-    const chat = model.startChat({
-      history: chatHistories[sessionId],
+    console.log(`[${new Date().toISOString()}] Sending message to Gemini...`);
+    
+    const contents = [
+      ...chatHistories[sessionId],
+      { role: "user", parts: [{ text: sanitizedMessage }] }
+    ];
+
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: contents,
+      config: {
+        systemInstruction: systemPrompt,
+      }
     });
 
-    console.log(`[${new Date().toISOString()}] Sending message to Gemini...`);
-    const result = await chat.sendMessage(sanitizedMessage);
-    const response = result.response.text();
+    const response = result.text;
 
-    console.log(`[${new Date().toISOString()}] Got response from Gemini: ${response.substring(0, 50)}...`);
+    console.log(`[${new Date().toISOString()}] Got response from Gemini: ${response ? response.substring(0, 50) : ""}...`);
 
-    // Update history manually if needed, but startChat manages it per instance. 
     // We update our stored history for future requests
     chatHistories[sessionId].push({ role: "user", parts: [{ text: sanitizedMessage }] });
     chatHistories[sessionId].push({ role: "model", parts: [{ text: response }] });
