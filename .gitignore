@@ -129,7 +129,6 @@ dist
 dist-ssr
 *.local
 
-
 COMPLIANCE_REPORT.md
 SECURITY.md
 TESTING.md
