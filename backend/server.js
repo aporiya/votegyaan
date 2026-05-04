@@ -7,9 +7,63 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // Limit request body size
 
 const PORT = process.env.PORT || 8080;
+
+// Security: Rate limiting (simple in-memory implementation)
+// In production, use Redis or a dedicated rate limiting service
+const rateLimiter = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(sessionId) {
+  const now = Date.now();
+  const userRequests = rateLimiter.get(sessionId) || [];
+  
+  // Remove requests outside the time window
+  const validRequests = userRequests.filter(timestamp => now - timestamp < RATE_LIMIT_WINDOW);
+  
+  if (validRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  validRequests.push(now);
+  rateLimiter.set(sessionId, validRequests);
+  return true;
+}
+
+// Security: Input validation and sanitization
+function validateAndSanitizeInput(input) {
+  if (!input || typeof input !== 'string') {
+    return null;
+  }
+  
+  // Trim whitespace
+  let sanitized = input.trim();
+  
+  // Limit length
+  if (sanitized.length > 1000) {
+    sanitized = sanitized.substring(0, 1000);
+  }
+  
+  // Remove potentially dangerous characters (basic sanitization)
+  // Note: For production, use a proper sanitization library like DOMPurify
+  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  
+  return sanitized;
+}
+
+// Security: Validate session ID format
+function validateSessionId(sessionId) {
+  if (!sessionId || typeof sessionId !== 'string') {
+    return false;
+  }
+  
+  // Session ID should be alphanumeric and reasonable length
+  return /^[a-zA-Z0-9_-]{1,50}$/.test(sessionId);
+}
 
 // Initialize Gemini API
 // It uses the GEMINI_API_KEY from the environment
@@ -107,19 +161,53 @@ const quizQuestions = [
 // In production, use a database or session store
 const chatHistories = {};
 
+// Security: Add security headers
+app.use((req, res, next) => {
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Enable XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    apiConfigured: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'dummy_key'),
+    activeSessions: Object.keys(chatHistories).length
+  });
 });
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, sessionId = 'default' } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
+    // Security: Validate session ID
+    if (!validateSessionId(sessionId)) {
+      return res.status(400).json({ error: "Invalid session ID" });
     }
 
-    console.log(`[${new Date().toISOString()}] Chat request - Session: ${sessionId}, Message: ${message.substring(0, 50)}...`);
+    // Security: Validate and sanitize input
+    const sanitizedMessage = validateAndSanitizeInput(message);
+    if (!sanitizedMessage) {
+      return res.status(400).json({ error: "Message is required and must be a valid string" });
+    }
+
+    // Security: Rate limiting
+    if (!checkRateLimit(sessionId)) {
+      return res.status(429).json({ 
+        error: "Too many requests. Please try again later.",
+        retryAfter: RATE_LIMIT_WINDOW / 1000
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] Chat request - Session: ${sessionId}, Message: ${sanitizedMessage.substring(0, 50)}...`);
 
     // Check if the user hasn't set a real API key yet
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "dummy_key") {
@@ -141,19 +229,24 @@ app.post('/api/chat', async (req, res) => {
       chatHistories[sessionId] = [];
     }
 
+    // Security: Limit chat history size to prevent memory issues
+    if (chatHistories[sessionId].length > 20) {
+      chatHistories[sessionId] = chatHistories[sessionId].slice(-10);
+    }
+
     const chat = model.startChat({
       history: chatHistories[sessionId],
     });
 
     console.log(`[${new Date().toISOString()}] Sending message to Gemini...`);
-    const result = await chat.sendMessage(message);
+    const result = await chat.sendMessage(sanitizedMessage);
     const response = result.response.text();
 
     console.log(`[${new Date().toISOString()}] Got response from Gemini: ${response.substring(0, 50)}...`);
 
     // Update history manually if needed, but startChat manages it per instance. 
     // We update our stored history for future requests
-    chatHistories[sessionId].push({ role: "user", parts: [{ text: message }] });
+    chatHistories[sessionId].push({ role: "user", parts: [{ text: sanitizedMessage }] });
     chatHistories[sessionId].push({ role: "model", parts: [{ text: response }] });
 
     res.json({ response });

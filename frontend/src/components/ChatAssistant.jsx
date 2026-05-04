@@ -13,6 +13,7 @@ export default function ChatAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   
   // Use a stable session ID per component lifecycle to maintain history on backend
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
@@ -24,6 +25,11 @@ export default function ChatAssistant() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -54,6 +60,8 @@ export default function ChatAssistant() {
       setError("Connection error. Is the backend running?");
     } finally {
       setIsLoading(false);
+      // Focus input after sending
+      inputRef.current?.focus();
     }
   };
 
@@ -71,11 +79,11 @@ export default function ChatAssistant() {
     <div className="chat-container animate-fade-in">
       <h1 className="page-title">Smart Q&A Assistant</h1>
       
-      <div className="chat-interface glass-panel">
-        <div className="chat-messages">
+      <div className="chat-interface glass-panel" role="region" aria-label="Chat interface">
+        <div className="chat-messages" role="log" aria-live="polite" aria-atomic="false">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`message-wrapper ${msg.role}`}>
-              <div className="message-avatar">
+            <div key={idx} className={`message-wrapper ${msg.role}`} role="article" aria-label={`${msg.role} message`}>
+              <div className="message-avatar" aria-hidden="true">
                 {msg.role === 'assistant' ? <Bot size={20} color="var(--saffron)" /> : <User size={20} />}
               </div>
               <div className={`message-bubble ${msg.role}`}>
@@ -85,36 +93,49 @@ export default function ChatAssistant() {
           ))}
           
           {isLoading && (
-            <div className="message-wrapper assistant">
-              <div className="message-avatar">
+            <div className="message-wrapper assistant" role="status" aria-label="Assistant is typing">
+              <div className="message-avatar" aria-hidden="true">
                 <Bot size={20} color="var(--saffron)" />
               </div>
-              <div className="message-bubble assistant typing-indicator">
+              <div className="message-bubble assistant typing-indicator" aria-label="Typing indicator">
                 <span></span><span></span><span></span>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="error-banner">
-              <AlertCircle size={16} /> {error}
+            <div className="error-banner" role="alert" aria-live="assertive">
+              <AlertCircle size={16} aria-hidden="true" /> {error}
             </div>
           )}
           
           <div ref={messagesEndRef} />
         </div>
 
-        <form className="chat-input-area" onSubmit={handleSend}>
+        <form className="chat-input-area" onSubmit={handleSend} role="form" aria-label="Chat input form">
+          <label htmlFor="chat-input" className="visually-hidden">Type your message</label>
           <input
+            id="chat-input"
+            ref={inputRef}
             type="text"
             className="chat-input glass-panel"
             placeholder="Ask about EVM, Voter ID, NOTA..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isLoading}
+            maxLength={1000}
+            aria-describedby="chat-input-help"
           />
-          <button type="submit" className="chat-send-btn btn-primary" disabled={isLoading || !input.trim()}>
-            <Send size={18} />
+          <span id="chat-input-help" className="visually-hidden">
+            Type your question about Indian elections and press Enter or click Send
+          </span>
+          <button 
+            type="submit" 
+            className="chat-send-btn btn-primary" 
+            disabled={isLoading || !input.trim()}
+            aria-label="Send message"
+          >
+            <Send size={18} aria-hidden="true" />
           </button>
         </form>
       </div>
